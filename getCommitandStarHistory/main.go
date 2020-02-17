@@ -72,8 +72,8 @@ func main() {
 			log.Fatal(err)
 		}
 		fmt.Println(j[0], j[1])
-		fmt.Println(respCommit)
-		fmt.Println(respStar)
+		fmt.Println("Commit:", respCommit)
+		fmt.Println("Star:", respStar)
 	}
 }
 
@@ -120,7 +120,6 @@ func getStarHistory(owner, name string, year, period int) (map[int]int, error) {
 				}
 			}
 		}
-		fmt.Println(starCount)
 	}
 	return starCount, err
 }
@@ -142,7 +141,6 @@ func getCommitHistory(owner, name string, year, period int) (commitCount map[int
 		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
 		json.Unmarshal(body, commitTotalCount)
-		fmt.Println(commitTotalCount.Data.Repository.DefaultBranchRef.Target.History.TotalCount)
 		commitCount[year+i] = commitTotalCount.Data.Repository.DefaultBranchRef.Target.History.TotalCount
 	}
 	return commitCount, err
