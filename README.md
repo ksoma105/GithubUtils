@@ -14,7 +14,12 @@ https://github.com/grafana/grafana
 ## Commit and Star Histories
 You can get Commits and Stars histories.
 ```
-TODO : Update example.
+spinnaker spinnaker
+Commit: map[2015:637 2016:514 2017:397 2018:300 2019:156]
+Star: map[2015:1398 2016:1097 2017:1430 2018:1544 2019:1301]
+argoproj argo-cd
+Commit: map[2019:1023 2015:0 2016:0 2017:0 2018:869]
+Star: map[2015:0 2016:0 2017:0 2018:504 2019:1717
 ```
 
 ## Number of Commit group by Companies
