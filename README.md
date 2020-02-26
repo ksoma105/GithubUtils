@@ -1,7 +1,7 @@
 # GithubUtils
 ## How to use
 ```bash
-export GITHUB_TOKEN = YOUR_GITHUB_API_TOKEN
+export GITHUB_TOKEN="YOUR_GITHUB_API_TOKEN"
 go run main.go
 ```
 
