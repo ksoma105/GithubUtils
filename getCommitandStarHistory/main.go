@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // StarHistory Github StarredAt json struct
@@ -72,17 +73,20 @@ func main() {
 			log.Fatal(err)
 		}
 		fmt.Println(j[0], j[1])
-		fmt.Println("Commit:", respCommit)
-		fmt.Println("Star:", respStar)
+		fmt.Println("###########################")
+		fmt.Println("Commit")
+		fmt.Println(respCommit)
+		fmt.Println("Star")
+		fmt.Println(respStar)
+		fmt.Println("###########################")
+		time.Sleep(time.Second)
 	}
 }
 
+//TODO: use year and period
 func getStarHistory(owner, name string, year, period int) (map[int]int, error) {
+	log.Printf("Start getting Stars \n")
 	starCount := make(map[int]int)
-	for i := 0; i < period; i++ {
-		starCount[year+i] = 0
-	}
-
 	client := http.Client{}
 	req, err := http.NewRequest("GET", "https://api.github.com/repos/"+owner+"/"+name+"/stargazers?per_page=100", nil)
 	apiToken := "bearer " + os.Getenv("GITHUB_TOKEN")
@@ -98,6 +102,7 @@ func getStarHistory(owner, name string, year, period int) (map[int]int, error) {
 	slice = strings.Split(slice[4], "rel=")
 	pageNum, _ := strconv.Atoi(strings.TrimRight(slice[0], ">; "))
 	_, err = ioutil.ReadAll(resp.Body)
+
 	for i := 1; i <= pageNum; i++ {
 		req, err = http.NewRequest("GET", "https://api.github.com/repos/"+owner+"/"+name+"/stargazers?per_page=100&page="+strconv.Itoa(i), nil)
 		req.Header.Set("Authorization", apiToken)
@@ -113,23 +118,50 @@ func getStarHistory(owner, name string, year, period int) (map[int]int, error) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		for i := 0; i < period; i++ {
-			for _, j := range *StarHistories {
-				if strings.Contains(j.StarredAt, strconv.Itoa(year+i)) {
-					starCount[year+i]++
-				}
+		//TODO: use slice
+		const layout = "2006-01-02"
+		first2017, _ := time.Parse(layout, "2017-01-01")
+		second2017, _ := time.Parse(layout, "2017-07-01")
+		first2018, _ := time.Parse(layout, "2018-01-01")
+		second2018, _ := time.Parse(layout, "2018-07-01")
+		first2019, _ := time.Parse(layout, "2019-01-01")
+		second2019, _ := time.Parse(layout, "2019-07-01")
+		first2020, _ := time.Parse(layout, "2020-01-01")
+
+		for _, j := range *StarHistories {
+			starredAt, _ := time.Parse(layout, (j.StarredAt)[:10])
+			switch {
+			case starredAt.After(first2017) && starredAt.Before(second2017):
+				starCount[201701]++
+			case starredAt.After(second2017) && starredAt.Before(first2018):
+				starCount[201707]++
+			case starredAt.After(first2018) && starredAt.Before(second2018):
+				starCount[201801]++
+			case starredAt.After(second2018) && starredAt.Before(first2019):
+				starCount[201807]++
+			case starredAt.After(first2019) && starredAt.Before(second2019):
+				starCount[201901]++
+			case starredAt.After(second2019) && starredAt.Before(first2020):
+				starCount[201907]++
+			default:
+				starCount[999999]++
 			}
 		}
+		log.Printf("All:%d finished:%d \n", pageNum, i)
 	}
 	return starCount, err
 }
 
+//TODO: use year and period
 func getCommitHistory(owner, name string, year, period int) (commitCount map[int]int, err error) {
+
+	log.Printf("Start getting Commits \n")
+	test := []string{"2017-01-01", "2017-07-01", "2018-01-01", "2018-07-01", "2019-01-01", "2019-07-01", "2020-01-01"}
 	commitCount = make(map[int]int)
-	for i := 0; i < period; i++ {
+	for i := range test {
 		commitTotalCount := new(CommitTotalCount)
 		client := http.Client{}
-		jsonQuery := `{repository(owner:\"` + owner + `\",name:\"` + name + `\"){defaultBranchRef{ name, target{ ... on Commit{history(since:\"` + strconv.Itoa(year+i) + `-01-01T00:00:00\",until:\"` + strconv.Itoa(year+i) + `-12-31T00:00:00\"){totalCount}}}}}}`
+		jsonQuery := `{repository(owner:\"` + owner + `\",name:\"` + name + `\"){defaultBranchRef{ name, target{ ... on Commit{history(since:\"` + test[i] + `T00:00:00\",until:\"` + test[i+1] + `T00:00:00\"){totalCount}}}}}}`
 		query := strings.NewReader(` { "query": "query` + jsonQuery + `"}`)
 		req, err := http.NewRequest("POST", "https://api.github.com/graphql", query)
 		apiToken := "bearer " + os.Getenv("GITHUB_TOKEN")
@@ -141,7 +173,10 @@ func getCommitHistory(owner, name string, year, period int) (commitCount map[int
 		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
 		json.Unmarshal(body, commitTotalCount)
-		commitCount[year+i] = commitTotalCount.Data.Repository.DefaultBranchRef.Target.History.TotalCount
+		commitCount[i] = commitTotalCount.Data.Repository.DefaultBranchRef.Target.History.TotalCount
+		if i == 5 {
+			break
+		}
 	}
 	return commitCount, err
 }
