@@ -72,8 +72,8 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(j[0], j[1])
 		fmt.Println("###########################")
+		fmt.Println(j[0], j[1])
 		fmt.Println("Commit")
 		fmt.Println(respCommit)
 		fmt.Println("Star")
@@ -143,11 +143,13 @@ func getStarHistory(owner, name string, year, period int) (map[int]int, error) {
 				starCount[201901]++
 			case starredAt.After(second2019) && starredAt.Before(first2020):
 				starCount[201907]++
+			case starredAt.After(first2020) && starredAt.Before(time.Now()):
+				starCount[20201]++
 			default:
-				starCount[999999]++
+				starCount[99999]++
 			}
 		}
-		log.Printf("All:%d finished:%d \n", pageNum, i)
+		log.Printf("%d %d All:%d finished:%d \n", owner, name, pageNum, i)
 	}
 	return starCount, err
 }
