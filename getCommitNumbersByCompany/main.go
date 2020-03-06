@@ -10,6 +10,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
 )
 
 // Contributor Github contributors json struct
@@ -49,10 +50,12 @@ func main() {
 		fmt.Print(`{"owner":"` + j[0] + `", "name":"` + j[1] + `","companycommits":`)
 		fmt.Print(string(resp))
 		fmt.Println(`}`)
+		time.Sleep(time.Second)
 	}
 }
 
 func getComanyList(owner, name string) (results map[string]int, err error) {
+	log.Printf("%s %s Start getComany List \n", owner, name)
 	client := http.Client{}
 	req, err := http.NewRequest("GET", "https://api.github.com/repos/"+owner+"/"+name+"/stats/contributors", nil)
 	apiToken := "bearer " + os.Getenv("GITHUB_TOKEN")
@@ -71,7 +74,8 @@ func getComanyList(owner, name string) (results map[string]int, err error) {
 	sort.Sort(sort.Reverse(contributors))
 	result := make(map[string]int)
 	for i, j := range *contributors {
-		if i == 99 {
+		log.Printf("%d ", i)
+		if i == 100 {
 			break
 		}
 		companyName, err := getComanyName(j.Author.URL)
@@ -80,6 +84,7 @@ func getComanyList(owner, name string) (results map[string]int, err error) {
 		}
 		result[companyName] += (*contributors)[i].Total
 	}
+	log.Printf("%s %s Finished getComany List \n", owner, name)
 	return result, err
 }
 
@@ -100,7 +105,7 @@ func getComanyName(url string) (comanyName string, err error) {
 }
 
 func getOssList() (ossList [][]string, err error) {
-	file, err := os.Open("./ossList.csv")
+	file, err := os.Open("../inputData/CICD.csv")
 	if err != nil {
 		log.Fatalf("CSV file reading error.")
 	}

@@ -29,7 +29,7 @@ func main() {
 		}
 		result := "{\"repoInfo\":" + respRepoInfo + ",\"commitsForHalfYear\":" + respNumCommits + "," + "\"contributors\":" + strconv.Itoa(numContributors) + "}"
 		fmt.Println(result)
-		time.Sleep(time.Second * 3)
+		time.Sleep(time.Second)
 	}
 }
 
@@ -66,7 +66,7 @@ func getNumCommitsForHalfYear(owner, name string) (string, error) {
 }
 
 func getOssList() (ossList [][]string, err error) {
-	file, err := os.Open("./ossList.csv")
+	file, err := os.Open("../inputData/Obserbility.csv")
 	if err != nil {
 		log.Fatalf("CSV file reading error.")
 	}
