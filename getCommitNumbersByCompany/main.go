@@ -66,6 +66,12 @@ func getComanyList(owner, name string) (results map[string]int, err error) {
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		log.Printf("Status Code is %d. Auto Retry after 20 second.", resp.StatusCode)
+		time.Sleep(20 * time.Second)
+		// Fix: Recursive processing. golang is not good at recursive process.
+		return getComanyList(owner, name)
+	}
 	contributors := new(Contributors)
 	err = json.Unmarshal(body, contributors)
 	if err != nil {
@@ -105,7 +111,7 @@ func getComanyName(url string) (comanyName string, err error) {
 }
 
 func getOssList() (ossList [][]string, err error) {
-	file, err := os.Open("../inputData/CICD.csv")
+	file, err := os.Open("../inputData/AIML.csv")
 	if err != nil {
 		log.Fatalf("CSV file reading error.")
 	}
