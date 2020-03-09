@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -65,22 +66,36 @@ func (a Contributors) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a Contributors) Less(i, j int) bool { return a[i].Total < a[j].Total }
 
 func main() {
+	var wg sync.WaitGroup
 	ossList, _ := getOssList()
+	fmt.Println("owner,name,~2017/01,2017/7,2018/1,2018/7,2019/1,2019/7,2020/1,2020/3")
+	fmt.Println("##### COMMITS #####")
 	for _, j := range ossList {
-		respCommit, err := getCommitHistory(j[0], j[1], 2015, 5)
-		respStar, err := getStarHistory(j[0], j[1], 2015, 5)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println("###########################")
-		fmt.Println(j[0], j[1])
-		fmt.Println("Commit")
-		fmt.Println(respCommit)
-		fmt.Println("Star")
-		fmt.Println(respStar)
-		fmt.Println("###########################")
-		time.Sleep(time.Second)
+		wg.Add(1)
+		go func(i []string) {
+			respCommit, err := getCommitHistory(i[0], i[1], 2015, 5)
+			//		respStar, err := getStarHistory(j[0], j[1], 2015, 5)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Printf("%v,%v,%v,%v,%v,%v,%v,%v,%v,%v \n", i[0], i[1], respCommit[0], respCommit[1], respCommit[2], respCommit[3], respCommit[4], respCommit[5], respCommit[6], respCommit[7])
+			wg.Done()
+		}(j)
 	}
+	wg.Wait()
+	fmt.Println("##### STARS #####")
+	for _, j := range ossList {
+		wg.Add(1)
+		go func(i []string) {
+			respStar, err := getStarHistory(i[0], i[1], 2015, 5)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Printf("%v,%v,%v,%v,%v,%v,%v,%v,%v,%v \n", i[0], i[1], respStar[201701], respStar[201707], respStar[201801], respStar[201807], respStar[201901], respStar[201907], respStar[202001], respStar[202003])
+			wg.Done()
+		}(j)
+	}
+	wg.Wait()
 }
 
 //TODO: use year and period
@@ -113,11 +128,18 @@ func getStarHistory(owner, name string, year, period int) (map[int]int, error) {
 		}
 		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
+		if resp.StatusCode != 200 {
+			log.Printf("%v,%v,Status Code is %d. Auto retry after 30 sec.", owner, name, resp.StatusCode)
+			time.Sleep(30 * time.Second)
+			// Fix: Recursive processing. golang is not good at recursive process.
+			return getStarHistory(owner, name, year, period)
+		}
 		StarHistories := new(StartHistories)
 		err = json.Unmarshal(body, StarHistories)
 		if err != nil {
 			log.Fatal(err)
 		}
+		//DEBUG
 		//TODO: use slice
 		const layout = "2006-01-02"
 		first2017, _ := time.Parse(layout, "2017-01-01")
@@ -131,25 +153,56 @@ func getStarHistory(owner, name string, year, period int) (map[int]int, error) {
 		for _, j := range *StarHistories {
 			starredAt, _ := time.Parse(layout, (j.StarredAt)[:10])
 			switch {
-			case starredAt.After(first2017) && starredAt.Before(second2017):
+			case starredAt.Before(time.Now()):
 				starCount[201701]++
-			case starredAt.After(second2017) && starredAt.Before(first2018):
 				starCount[201707]++
-			case starredAt.After(first2018) && starredAt.Before(second2018):
 				starCount[201801]++
-			case starredAt.After(second2018) && starredAt.Before(first2019):
 				starCount[201807]++
-			case starredAt.After(first2019) && starredAt.Before(second2019):
 				starCount[201901]++
-			case starredAt.After(second2019) && starredAt.Before(first2020):
 				starCount[201907]++
-			case starredAt.After(first2020) && starredAt.Before(time.Now()):
-				starCount[20201]++
+				starCount[202001]++
+				starCount[202003]++
+			case starredAt.Before(first2020):
+				starCount[201701]++
+				starCount[201707]++
+				starCount[201801]++
+				starCount[201807]++
+				starCount[201901]++
+				starCount[201907]++
+				starCount[202001]++
+			case starredAt.Before(second2019):
+				starCount[201701]++
+				starCount[201707]++
+				starCount[201801]++
+				starCount[201807]++
+				starCount[201901]++
+				starCount[201907]++
+			case starredAt.Before(first2019):
+				starCount[201701]++
+				starCount[201707]++
+				starCount[201801]++
+				starCount[201807]++
+				starCount[201901]++
+			case starredAt.Before(second2018):
+				starCount[201701]++
+				starCount[201707]++
+				starCount[201801]++
+				starCount[201807]++
+			case starredAt.Before(first2018):
+				starCount[201701]++
+				starCount[201707]++
+				starCount[201801]++
+			case starredAt.Before(second2017):
+				starCount[201701]++
+				starCount[201707]++
+			case starredAt.Before(first2017):
+				starCount[201701]++
 			default:
 				starCount[99999]++
 			}
 		}
 		log.Printf("%d %d All:%d finished:%d \n", owner, name, pageNum, i)
+		time.Sleep(time.Second)
 	}
 	return starCount, err
 }
@@ -158,12 +211,17 @@ func getStarHistory(owner, name string, year, period int) (map[int]int, error) {
 func getCommitHistory(owner, name string, year, period int) (commitCount map[int]int, err error) {
 
 	log.Printf("Start getting Commits \n")
-	test := []string{"2017-01-01", "2017-07-01", "2018-01-01", "2018-07-01", "2019-01-01", "2019-07-01", "2020-01-01"}
+	test := []string{"2017-01-01", "2017-01-01", "2017-07-01", "2018-01-01", "2018-07-01", "2019-01-01", "2019-07-01", "2020-01-01", "2020-03-01"}
 	commitCount = make(map[int]int)
 	for i := range test {
 		commitTotalCount := new(CommitTotalCount)
 		client := http.Client{}
-		jsonQuery := `{repository(owner:\"` + owner + `\",name:\"` + name + `\"){defaultBranchRef{ name, target{ ... on Commit{history(since:\"` + test[i] + `T00:00:00\",until:\"` + test[i+1] + `T00:00:00\"){totalCount}}}}}}`
+		jsonQuery := ""
+		if i == 0 {
+			jsonQuery = `{repository(owner:\"` + owner + `\",name:\"` + name + `\"){defaultBranchRef{ name, target{ ... on Commit{history(until:\"` + test[i] + `T00:00:00\"){totalCount}}}}}}`
+		} else {
+			jsonQuery = `{repository(owner:\"` + owner + `\",name:\"` + name + `\"){defaultBranchRef{ name, target{ ... on Commit{history(since:\"` + test[i] + `T00:00:00\",until:\"` + test[i+1] + `T00:00:00\"){totalCount}}}}}}`
+		}
 		query := strings.NewReader(` { "query": "query` + jsonQuery + `"}`)
 		req, err := http.NewRequest("POST", "https://api.github.com/graphql", query)
 		apiToken := "bearer " + os.Getenv("GITHUB_TOKEN")
@@ -175,8 +233,8 @@ func getCommitHistory(owner, name string, year, period int) (commitCount map[int
 		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
 		json.Unmarshal(body, commitTotalCount)
-		commitCount[i] = commitTotalCount.Data.Repository.DefaultBranchRef.Target.History.TotalCount
-		if i == 5 {
+		commitCount[i] = commitTotalCount.Data.Repository.DefaultBranchRef.Target.History.TotalCount + commitCount[i-1]
+		if i == 7 {
 			break
 		}
 	}
@@ -184,7 +242,7 @@ func getCommitHistory(owner, name string, year, period int) (commitCount map[int
 }
 
 func getOssList() (ossList [][]string, err error) {
-	file, err := os.Open("./ossList.csv")
+	file, err := os.Open("../inputData/CICD.csv")
 	if err != nil {
 		log.Fatalf("CSV file reading error.")
 	}
