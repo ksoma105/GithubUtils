@@ -152,57 +152,36 @@ func getStarHistory(owner, name string, year, period int) (map[int]int, error) {
 
 		for _, j := range *StarHistories {
 			starredAt, _ := time.Parse(layout, (j.StarredAt)[:10])
-			switch {
-			case starredAt.Before(time.Now()):
+			if starredAt.Before(first2017) {
 				starCount[201701]++
+			}
+			if starredAt.Before(second2017) {
 				starCount[201707]++
+			}
+			if starredAt.Before(first2018) {
 				starCount[201801]++
+			}
+			if starredAt.Before(second2018) {
 				starCount[201807]++
+			}
+			if starredAt.Before(first2019) {
 				starCount[201901]++
+			}
+			if starredAt.Before(second2019) {
 				starCount[201907]++
+			}
+			if starredAt.Before(first2020) {
 				starCount[202001]++
+			}
+			if starredAt.Before(time.Now()) {
 				starCount[202003]++
-			case starredAt.Before(first2020):
-				starCount[201701]++
-				starCount[201707]++
-				starCount[201801]++
-				starCount[201807]++
-				starCount[201901]++
-				starCount[201907]++
-				starCount[202001]++
-			case starredAt.Before(second2019):
-				starCount[201701]++
-				starCount[201707]++
-				starCount[201801]++
-				starCount[201807]++
-				starCount[201901]++
-				starCount[201907]++
-			case starredAt.Before(first2019):
-				starCount[201701]++
-				starCount[201707]++
-				starCount[201801]++
-				starCount[201807]++
-				starCount[201901]++
-			case starredAt.Before(second2018):
-				starCount[201701]++
-				starCount[201707]++
-				starCount[201801]++
-				starCount[201807]++
-			case starredAt.Before(first2018):
-				starCount[201701]++
-				starCount[201707]++
-				starCount[201801]++
-			case starredAt.Before(second2017):
-				starCount[201701]++
-				starCount[201707]++
-			case starredAt.Before(first2017):
-				starCount[201701]++
-			default:
-				starCount[99999]++
 			}
 		}
 		log.Printf("%d %d All:%d finished:%d \n", owner, name, pageNum, i)
 		time.Sleep(time.Second)
+	}
+	if starCount[202003] == 40000 {
+		log.Printf("%v,%v STARS LIMIT !!! \n", owner, name)
 	}
 	return starCount, err
 }
@@ -242,7 +221,7 @@ func getCommitHistory(owner, name string, year, period int) (commitCount map[int
 }
 
 func getOssList() (ossList [][]string, err error) {
-	file, err := os.Open("../inputData/CICD.csv")
+	file, err := os.Open("../inputData/Obserbility.csv")
 	if err != nil {
 		log.Fatalf("CSV file reading error.")
 	}

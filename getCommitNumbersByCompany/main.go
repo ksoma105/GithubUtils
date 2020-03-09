@@ -111,7 +111,7 @@ func getComanyName(url string) (comanyName string, err error) {
 }
 
 func getOssList() (ossList [][]string, err error) {
-	file, err := os.Open("../inputData/AIML.csv")
+	file, err := os.Open("../inputData/obserbility.csv")
 	if err != nil {
 		log.Fatalf("CSV file reading error.")
 	}
