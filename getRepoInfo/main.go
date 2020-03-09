@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -12,8 +13,58 @@ import (
 	"time"
 )
 
+type repoInfo struct {
+	RepoInfo struct {
+		Data struct {
+			Repository struct {
+				Name        string `json:"name"`
+				URL         string `json:"url"`
+				LicenseInfo struct {
+					Name string `json:"name"`
+				} `json:"licenseInfo"`
+				CreatedAt       time.Time `json:"createdAt"`
+				PrimaryLanguage struct {
+					Name string `json:"name"`
+				} `json:"primaryLanguage"`
+				DefaultBranchRef struct {
+					Name   string `json:"name"`
+					Target struct {
+						History struct {
+							TotalCount int `json:"totalCount"`
+						} `json:"history"`
+					} `json:"target"`
+				} `json:"defaultBranchRef"`
+				Releases struct {
+					Nodes struct {
+					} `json:"nodes"`
+				} `json:"releases"`
+				Stargazers struct {
+					TotalCount int `json:"totalCount"`
+				} `json:"stargazers"`
+			} `json:"repository"`
+		} `json:"data"`
+	} `json:"repoInfo"`
+	CommitsForHalfYear struct {
+		Data struct {
+			Repository struct {
+				DefaultBranchRef struct {
+					Name   string `json:"name"`
+					Target struct {
+						History struct {
+							TotalCount int `json:"totalCount"`
+						} `json:"history"`
+					} `json:"target"`
+				} `json:"defaultBranchRef"`
+			} `json:"repository"`
+		} `json:"data"`
+	} `json:"commitsForHalfYear"`
+	Contributors int `json:"contributors"`
+}
+
 func main() {
 	ossList, _ := getOssList()
+	fmt.Println("owner,name,stars,commits,commits(late year),contributors,stared_at,latest version,licence")
+
 	for _, j := range ossList {
 		respRepoInfo, err := getRepoInfo(j[0], j[1])
 		if err != nil {
@@ -28,7 +79,18 @@ func main() {
 			log.Fatalf("Error: Cannot get number of contributors.")
 		}
 		result := "{\"repoInfo\":" + respRepoInfo + ",\"commitsForHalfYear\":" + respNumCommits + "," + "\"contributors\":" + strconv.Itoa(numContributors) + "}"
-		fmt.Println(result)
+		repoInfo := new(repoInfo)
+		json.Unmarshal([]byte(result), repoInfo)
+		fmt.Printf("%v,%v,%v,%v,%v,%v,%v,%v,%v \n",
+			j[0],
+			j[1],
+			repoInfo.RepoInfo.Data.Repository.Stargazers.TotalCount,
+			repoInfo.RepoInfo.Data.Repository.DefaultBranchRef.Target.History.TotalCount,
+			repoInfo.CommitsForHalfYear.Data.Repository.DefaultBranchRef.Target.History.TotalCount,
+			repoInfo.Contributors,
+			repoInfo.RepoInfo.Data.Repository.CreatedAt.Format("2006-01-02"),
+			repoInfo.RepoInfo.Data.Repository.Releases.Nodes,
+			repoInfo.RepoInfo.Data.Repository.LicenseInfo.Name)
 		time.Sleep(time.Second)
 	}
 }
@@ -66,7 +128,7 @@ func getNumCommitsForHalfYear(owner, name string) (string, error) {
 }
 
 func getOssList() (ossList [][]string, err error) {
-	file, err := os.Open("../inputData/Obserbility.csv")
+	file, err := os.Open("./ossList.csv")
 	if err != nil {
 		log.Fatalf("CSV file reading error.")
 	}
