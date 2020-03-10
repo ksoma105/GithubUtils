@@ -43,13 +43,32 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		resp, err := json.Marshal(companyList)
+		//resp, err := json.Marshal(companyList)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Print(`{"owner":"` + j[0] + `", "name":"` + j[1] + `","companycommits":`)
-		fmt.Print(string(resp))
-		fmt.Println(`}`)
+		a := List{}
+		for k, v := range companyList {
+			e := Entry{k, v}
+			a = append(a, e)
+		}
+
+		sort.Sort(sort.Reverse(a))
+		output, err := os.OpenFile("../../results/AIML/CommitRatio_"+j[0]+"_"+j[1]+".csv", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer output.Close()
+		output.Write([]byte(fmt.Sprintf("%v,%v \n", j[0], j[1])))
+		for _, t := range a {
+			if t.name == "" {
+				output.Write([]byte(fmt.Sprintf(`"記載なし" ,%v`, t.value)))
+				output.Write([]byte("\n"))
+			} else {
+				output.Write([]byte(fmt.Sprintf(`"%v" ,%v`, t.name, t.value)))
+				output.Write([]byte("\n"))
+			}
+		}
 		time.Sleep(time.Second)
 	}
 }
@@ -107,11 +126,17 @@ func getComanyName(url string) (comanyName string, err error) {
 	body, err := ioutil.ReadAll(resp.Body)
 	user := new(User)
 	err = json.Unmarshal(body, user)
-	return user.Company, err
+	if len(user.Company) > 0 {
+		if string(user.Company[0]) == "@" {
+			user.Company = user.Company[1:]
+		}
+	}
+
+	return strings.ToLower(strings.TrimSpace(user.Company)), err
 }
 
 func getOssList() (ossList [][]string, err error) {
-	file, err := os.Open("../inputData/obserbility.csv")
+	file, err := os.Open("../inputData/AIML2.csv")
 	if err != nil {
 		log.Fatalf("CSV file reading error.")
 	}
@@ -127,4 +152,26 @@ func getOssList() (ossList [][]string, err error) {
 		ossList = append(ossList, slice[3:5])
 	}
 	return ossList, err
+}
+
+type Entry struct {
+	name  string
+	value int
+}
+type List []Entry
+
+func (l List) Len() int {
+	return len(l)
+}
+
+func (l List) Swap(i, j int) {
+	l[i], l[j] = l[j], l[i]
+}
+
+func (l List) Less(i, j int) bool {
+	if l[i].value == l[j].value {
+		return (l[i].name < l[j].name)
+	} else {
+		return (l[i].value < l[j].value)
+	}
 }
