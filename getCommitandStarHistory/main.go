@@ -67,12 +67,17 @@ func (a Contributors) Less(i, j int) bool { return a[i].Total < a[j].Total }
 
 func main() {
 	var wg sync.WaitGroup
+	c := make(chan bool, 2)
 	ossList, _ := getOssList()
 	fmt.Println("owner,name,~2017/01,2017/7,2018/1,2018/7,2019/1,2019/7,2020/1,2020/3")
 	fmt.Println("##### COMMITS #####")
 	for _, j := range ossList {
+		c <- true
 		wg.Add(1)
 		go func(i []string) {
+			defer func() {
+				<-c
+			}()
 			respCommit, err := getCommitHistory(i[0], i[1], 2015, 5)
 			//		respStar, err := getStarHistory(j[0], j[1], 2015, 5)
 			if err != nil {
@@ -85,8 +90,12 @@ func main() {
 	wg.Wait()
 	fmt.Println("##### STARS #####")
 	for _, j := range ossList {
+		c <- true
 		wg.Add(1)
 		go func(i []string) {
+			defer func() {
+				<-c
+			}()
 			respStar, err := getStarHistory(i[0], i[1], 2015, 5)
 			if err != nil {
 				log.Fatal(err)
@@ -113,9 +122,12 @@ func getStarHistory(owner, name string, year, period int) (map[int]int, error) {
 	}
 	defer resp.Body.Close()
 	header, _ := httputil.DumpResponse(resp, false)
-	slice := strings.Split(string(header), "page=")
-	slice = strings.Split(slice[4], "rel=")
-	pageNum, _ := strconv.Atoi(strings.TrimRight(slice[0], ">; "))
+	pageNum := 1
+	if strings.Contains(string(header), "Link: <https://api.github.com/repositories") {
+		slice := strings.Split(string(header), "page=")
+		slice = strings.Split(slice[4], "rel=")
+		pageNum, _ = strconv.Atoi(strings.TrimRight(slice[0], ">; "))
+	}
 	_, err = ioutil.ReadAll(resp.Body)
 
 	for i := 1; i <= pageNum; i++ {
@@ -178,7 +190,7 @@ func getStarHistory(owner, name string, year, period int) (map[int]int, error) {
 			}
 		}
 		log.Printf("%d %d All:%d finished:%d \n", owner, name, pageNum, i)
-		time.Sleep(time.Second)
+		time.Sleep(500 * time.Millisecond)
 	}
 	if starCount[202003] == 40000 {
 		log.Printf("%v,%v STARS LIMIT !!! \n", owner, name)
@@ -221,7 +233,7 @@ func getCommitHistory(owner, name string, year, period int) (commitCount map[int
 }
 
 func getOssList() (ossList [][]string, err error) {
-	file, err := os.Open("../inputData/Obserbility.csv")
+	file, err := os.Open("../inputData/AIML.csv")
 	if err != nil {
 		log.Fatalf("CSV file reading error.")
 	}
