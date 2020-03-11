@@ -154,10 +154,13 @@ func getOssList() (ossList [][]string, err error) {
 	return ossList, err
 }
 
+// Entry Entry
 type Entry struct {
 	name  string
 	value int
 }
+
+//List List
 type List []Entry
 
 func (l List) Len() int {
@@ -171,7 +174,6 @@ func (l List) Swap(i, j int) {
 func (l List) Less(i, j int) bool {
 	if l[i].value == l[j].value {
 		return (l[i].name < l[j].name)
-	} else {
-		return (l[i].value < l[j].value)
 	}
+	return (l[i].value < l[j].value)
 }
