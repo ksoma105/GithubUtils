@@ -54,7 +54,7 @@ func main() {
 		}
 
 		sort.Sort(sort.Reverse(a))
-		output, err := os.OpenFile("../../results/AIML/CommitRatio_"+j[0]+"_"+j[1]+".csv", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
+		output, err := os.OpenFile("./result/CommitRatio_"+j[0]+"_"+j[1]+".csv", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -136,7 +136,7 @@ func getComanyName(url string) (comanyName string, err error) {
 }
 
 func getOssList() (ossList [][]string, err error) {
-	file, err := os.Open("../inputData/AIML2.csv")
+	file, err := os.Open("./ossList.csv")
 	if err != nil {
 		log.Fatalf("CSV file reading error.")
 	}

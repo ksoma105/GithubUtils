@@ -233,7 +233,7 @@ func getCommitHistory(owner, name string, year, period int) (commitCount map[int
 }
 
 func getOssList() (ossList [][]string, err error) {
-	file, err := os.Open("../inputData/AIML.csv")
+	file, err := os.Open("../inputData/ossList.csv")
 	if err != nil {
 		log.Fatalf("CSV file reading error.")
 	}
