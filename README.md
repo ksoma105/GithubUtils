@@ -13,7 +13,7 @@ https://github.com/grafana/grafana
 
 ## Commit and Star Histories
 You can get Commits and Stars histories.
-```csv
+```cs
 ##### COMMITS #####
 concourse,concourse,11746,13842,15505,16776,18292,19812,20928,21464 
 argoproj,argo-cd,0,0,0,385,869,1387,1892,1983 
@@ -26,7 +26,7 @@ fluxcd,flux,15,134,291,575,1282,2253,3603,4048
 
 ## Number of Commit group by Companies
 You can get nuber of commits group by Companies.
-```csv
+```cs
 argoproj,argo-cd 
 "intuit" ,1430
 "5-:\$J$7" ,183
